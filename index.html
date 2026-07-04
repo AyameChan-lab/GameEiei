@@ -486,7 +486,6 @@
       let correctHits = 0,
         wrongHits = 0,
         shieldActive = false,
-        tripleShotTimer = 0,
         comboCount = 0;
       const MAX_WRONG = 3,
         TARGET = 10;
@@ -823,7 +822,6 @@
         correctHits = 0;
         wrongHits = 0;
         shieldActive = false;
-        tripleShotTimer = 0;
         comboCount = 0;
         tIdx = 0;
         wIdx = 0;
@@ -917,10 +915,10 @@
         if (Math.random() < 0.08) {
           const r = 26;
           const startX = getSafeX(r, 15);
-          const types = ["shield", "time", "triple"];
+          const types = ["shield", "time", "heart"];
           const type = types[~~(Math.random() * types.length)];
-          const emojis = { shield: "🛡️", time: "⏱️", triple: "🚀" };
-          const colors = { shield: "#A78BFA", time: "#38BDF8", triple: "#FACC15" };
+          const emojis = { shield: "🛡️", time: "⏱️", heart: "❤️" };
+          const colors = { shield: "#A78BFA", time: "#38BDF8", heart: "#FF3B30" };
           balls.push({
             x: startX,
             y: -r + yOff,
@@ -980,16 +978,8 @@
         const now = Date.now();
         if (now - lastFire < FIRE_MS) return;
         lastFire = now;
-        if (tripleShotTimer > 0) {
-          bullets.push({ x: player.x, y: player.y - player.h / 2, vx: 0, vy: -14 });
-          bullets.push({ x: player.x, y: player.y - player.h / 2, vx: -3, vy: -13.5 });
-          bullets.push({ x: player.x, y: player.y - player.h / 2, vx: 3, vy: -13.5 });
-          SFX.shoot();
-          setTimeout(() => SFX.shoot(), 60);
-        } else {
-          bullets.push({ x: player.x, y: player.y - player.h / 2, vx: 0, vy: -14 });
-          SFX.shoot();
-        }
+        bullets.push({ x: player.x, y: player.y - player.h / 2, vx: 0, vy: -14 });
+        SFX.shoot();
       }
 
       function boom(x, y, ok, isAsteroid = false) {
@@ -1060,10 +1050,15 @@
           timeLeft = Math.min(GAME_TIME, timeLeft + 10000);
           boom(x, y, true);
           spawnTextParticle(x, y, "+10 วินาที! ⏱️", "#38BDF8");
-        } else if (type === "triple") {
-          tripleShotTimer = 7000;
+        } else if (type === "heart") {
+          const recovered = wrongHits > 0;
+          wrongHits = Math.max(0, wrongHits - 1);
           boom(x, y, true);
-          spawnTextParticle(x, y, "ยิง 3 นัด! 🚀", "#FACC15");
+          if (recovered) {
+            spawnTextParticle(x, y, "เพิ่มหัวใจ! ❤️", "#FF3B30");
+          } else {
+            spawnTextParticle(x, y, "หัวใจเต็มแล้ว! ❤️", "#FF8FA3");
+          }
         }
       }
 
@@ -1071,9 +1066,6 @@
         if (gs !== ST.PLAYING) return;
         elapsed += dt;
         timeLeft -= dt;
-        if (tripleShotTimer > 0) {
-          tripleShotTimer -= dt;
-        }
 
         /* Timer out */
         if (timeLeft <= 0) {
