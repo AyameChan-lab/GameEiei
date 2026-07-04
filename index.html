@@ -958,7 +958,7 @@
         }
 
         /* ── Asteroid (obstacle) ── */
-        if (Math.random() < 0.13 && correctHits >= 2) {
+        if (Math.random() < 0.18 && correctHits >= 2) {
           const r = 30;
           const startX = getSafeX(r, 15);
           balls.push({
@@ -982,7 +982,7 @@
         }
 
         /* ── Power-up (item) ── */
-        if (Math.random() < 0.08) {
+        if (Math.random() < 0.14) {
           const r = 26;
           const startX = getSafeX(r, 15);
           const types = ["shield", "time", "heart"];
