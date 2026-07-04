@@ -854,11 +854,47 @@
         if (balls.filter((b) => b.alive).length >= MAX_BALLS) return;
         const mult = getSpdMult();
 
+        // Helper to find a non-overlapping X coordinate
+        function getSafeX(ballRadius, margin) {
+          let bestX = rnd(ballRadius + margin, GW - ballRadius - margin);
+          let bestScore = -99999;
+          
+          for (let attempt = 0; attempt < 25; attempt++) {
+            const candidateX = rnd(ballRadius + margin, GW - ballRadius - margin);
+            let score = 99999;
+            
+            balls.forEach(ob => {
+              if (!ob.alive) return;
+              // Compare with balls in the upper 60% of the screen
+              if (ob.y < GH * 0.6) {
+                const dx = Math.abs(candidateX - ob.x);
+                const dy = Math.abs(-ballRadius - ob.y);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < score) {
+                  score = dist;
+                }
+                // Heavy penalty for vertical alignment (falling in similar lanes)
+                const minLaneWidth = (ballRadius + ob.r) * 2.2;
+                if (dx < minLaneWidth) {
+                  score -= (minLaneWidth - dx) * 4.0;
+                }
+              }
+            });
+            
+            if (score > bestScore) {
+              bestScore = score;
+              bestX = candidateX;
+            }
+          }
+          return bestX;
+        }
+
         /* ── Asteroid (obstacle) ── */
         if (Math.random() < 0.13 && correctHits >= 2) {
           const r = 30;
+          const startX = getSafeX(r, 15);
           balls.push({
-            x: rnd(r + 15, GW - r - 15),
+            x: startX,
             y: -r + yOff,
             r,
             spd: rnd(1.6, 2.6) * mult,
@@ -880,12 +916,13 @@
         /* ── Power-up (item) ── */
         if (Math.random() < 0.08) {
           const r = 26;
+          const startX = getSafeX(r, 15);
           const types = ["shield", "time", "triple"];
           const type = types[~~(Math.random() * types.length)];
           const emojis = { shield: "🛡️", time: "⏱️", triple: "🚀" };
           const colors = { shield: "#A78BFA", time: "#38BDF8", triple: "#FACC15" };
           balls.push({
-            x: rnd(r + 15, GW - r - 15),
+            x: startX,
             y: -r + yOff,
             r,
             spd: rnd(1.8, 2.8) * mult,
@@ -903,7 +940,7 @@
         }
 
         /* ── Country ball ── */
-        const r = 44;
+        const r = 36;
         const ok = Math.random() < 0.54;
         let entry;
         if (ok) {
@@ -915,7 +952,7 @@
         }
 
         const hasDrift = correctHits >= 3 && Math.random() < 0.32;
-        const startX = rnd(r + 18, GW - r - 18);
+        const startX = getSafeX(r, 18);
 
         balls.push({
           x: startX,
@@ -1490,7 +1527,7 @@
         ctx.save();
         let fz = Math.floor(r * 0.3);
         if (b.name.length > 7) fz = Math.floor(r * 0.23);
-        fz = Math.max(fz, 10);
+        fz = Math.max(fz, 11);
         ctx.font = `bold ${fz}px Kanit`;
         const tw = ctx.measureText(b.name).width;
         const ph = 9,
